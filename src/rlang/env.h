@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <Rversion.h>
 
+#define RLANG_USE_R_EXISTS (R_VERSION < R_Version(4, 2, 0))
+
 
 extern r_obj* r_methods_ns_env;
 
@@ -91,9 +93,6 @@ r_obj* r_env_find_anywhere(r_obj* env, r_obj* sym) {
 r_obj* r_env_find_until(r_obj* env, r_obj* sym, r_obj* last);
 
 
-// TODO: Enable `R_existsVarInFrame()` when R 4.2 is out
-#define RLANG_USE_R_EXISTS (1 || R_VERSION < R_Version(4, 2, 0))
-
 static inline
 bool r_env_has(r_obj* env, r_obj* sym) {
 #if RLANG_USE_R_EXISTS
@@ -110,7 +109,13 @@ bool r_env_has_anywhere(r_obj* env, r_obj* sym) {
   bool r__env_has_anywhere(r_obj*, r_obj*);
   return r__env_has_anywhere(env, sym);
 #else
-  return TODO();
+  while (env != r_envs.empty) {
+    if (r_env_has(env, sym)) {
+      return true;
+    }
+    env = r_env_parent(env);
+  }
+  return false;
 #endif
 }
 
